@@ -11,8 +11,7 @@ void i2c::begin()
 void i2c::requestData()
 {
     int post_length = requestDataLength();  // get amount of the data to be send by the slave
-    delay(10);  // wait to clean I2C bus
-
+    delay(5);  // wait to clean I2C bus
     if (post_length > 0) requestData(post_length);
 }
 
@@ -50,7 +49,6 @@ int i2c::requestDataLength()
         c = Wire.read();
         len[i++] = c;
     }
-
     return atoi(len);  // convert char to int and return
 }
 
