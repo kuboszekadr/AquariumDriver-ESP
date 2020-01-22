@@ -22,4 +22,13 @@ void loop()
         i2c::sendOrder();
         Serial.println("Done.");
     }
+    if (abs(currentMillis - lastMillis) > 1000L)
+    {
+        lastMillis = millis();
+        Serial.println("Requesting data from the slave...");
+        memset(i2c::buffer, 0, 512);
+        i2c::requestData();
+        Serial.println("Done.");
+        Serial.println(i2c::buffer);
+    }
 }
