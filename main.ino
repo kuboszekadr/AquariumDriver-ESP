@@ -1,34 +1,42 @@
 #include "src/I2CMaster.h"
+#include "src/Config.h"
+
+#include <Arduino.h>
+#include <EEPROM.h>
 #include <Wire.h>
 
-unsigned long lastMillis = 0;
+#define DATA_HARVEST_OFFSET 60000L  // get data from Arduino once a minute
+
+unsigned long last_data_harvest = 0L;
 
 void setup()
 {
     Serial.begin(9600);  // for debugging porpuses
-	i2c::begin();  // join i2c bus
+    delay(7500);
+    Serial.println("Serial test");
+
+	// i2c::begin();  // join i2c bus
+
 }
 
 void loop()
 {
-    unsigned long currentMillis = millis();
-
-	if (abs(currentMillis - lastMillis) > 500L)
-    {
-        lastMillis = millis();
-        Serial.println("Sending order to the slave...");
-        memset(i2c::buffer, 0, 512);
-        strcpy(i2c::buffer, "1;20200117223344");
-        i2c::sendOrder();
-        Serial.println("Done.");
-    }
-    if (abs(currentMillis - lastMillis) > 1000L)
-    {
-        lastMillis = millis();
-        Serial.println("Requesting data from the slave...");
-        memset(i2c::buffer, 0, 512);
-        i2c::requestData();
-        Serial.println("Done.");
-        Serial.println(i2c::buffer);
-    }
+    Serial.println("DUPA");
+    delay(500);
+    // requestDataFromArduino();
 }
+
+// void requestDataFromArduino()
+// {
+//     if (millis() - last_data_harvest > DATA_HARVEST_OFFSET)
+//     {
+//         last_data_harvest = millis();
+//         Serial.println("Requesting data from the slave...");
+
+//         memset(i2c::buffer, 0, 512);
+//         i2c::requestData();
+        
+//         Serial.println("Done.");
+//         Serial.println(i2c::buffer);
+//     }
+// }
