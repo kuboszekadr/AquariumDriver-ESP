@@ -8,7 +8,7 @@ char Config::pwd[CONFIG_PWD_LENGTH];
 char Config::device_id[CONFIG_DB_DEVICE_ID_LENGTH];
 char Config::db_ip[CONFIG_DB_IP_LENGTH];
 char Config::db_username[CONFIG_USERNAME_LENGTH];
-char Config::db_pwd[CONFIG_PWD_LENGTH];
+char Config::db_pwd[CONFIG_DB_PWD_LENGTH];
 
 void Config::load()
 {
@@ -32,22 +32,23 @@ void Config::loadDBConfig()
 
 void Config::load(char *target, uint8_t address)
 {
+    EEPROM.begin(256);
+    uint8_t c = EEPROM.read(address);
     int i = 0;
-    EEPROM.begin(512);
-    char c = EEPROM.read(i + address);
-
-    while (c != '\0')
+    while (c != 255)
     {
-        c = char(EEPROM.read(i + address));
-        target[i++] = c;
+        c = EEPROM.read(i + address);
+        target[i++] = char(c);
     }
     EEPROM.end();
+    delay(100);
 }
 
 bool Config::update(Params param, const char *value)
 {
     int length;
 
+    // get param EEPROM address
     switch (param)
     {
     case SSID:
@@ -66,28 +67,30 @@ bool Config::update(Params param, const char *value)
         length = CONFIG_USERNAME_LENGTH;
         break;
     case DB_PWD:
-        length = CONFIG_PWD_LENGTH;
+        length = CONFIG_DB_PWD_LENGTH;
         break;
     default:
         break;
     }
 
     int address = getEEPROMAddress(param);
+
     EEPROM.begin(512);
-    delay(10);
+    delay(100);
 
     const char *c = value;
     int i = 0;
+    // write value into EEPROM
     while (*c)
     {
-        EEPROM.write(address, *c++);
-        address++;
+        EEPROM.write(address++, *c++);
     }
+    // close transaction
+    EEPROM.write(address, '\0'); // add empty char at the end
     EEPROM.commit();
     EEPROM.end();
 
-    delay(10);
-
+    delay(100);
     return true;
 }
 
@@ -107,7 +110,7 @@ int Config::getEEPROMAddress(Params param)
     {
         address += CONFIG_DB_DEVICE_ID_LENGTH;
     }
-    if(param >= DB_USERNAME)
+    if (param >= DB_USERNAME)
     {
         address += CONFIG_DB_IP_LENGTH;
     }
@@ -115,6 +118,6 @@ int Config::getEEPROMAddress(Params param)
     {
         address += CONFIG_USERNAME_LENGTH;
     }
-    
+
     return address + param;
 }
