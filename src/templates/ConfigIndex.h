@@ -1,4 +1,7 @@
-char index[] PROGMEM = R"=="==(
+#ifndef ConfigIndex__h
+#define ConfigIndex__h
+
+static char config_index[] PROGMEM = R"=="==(
 <html>
     <link rel="stylesheet" href="https://bootswatch.com/4/darkly/bootstrap.css" media="screen">
     <link rel="stylesheet" href="https://bootswatch.com/_assets/css/custom.min.css"> 
@@ -125,3 +128,5 @@ char index[] PROGMEM = R"=="==(
     </script>
 </html>  
 )=="==";
+
+#endif
