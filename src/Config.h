@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 #include <Arduino.h>
-#include <ArduinoJson.h>
 #include <EEPROM.h>
 #include <FS.h>
 
