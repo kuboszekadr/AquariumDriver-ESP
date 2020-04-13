@@ -10,6 +10,7 @@ namespace ESPClient
 {
     void launchSoftAP(char *ssid);
     wl_status_t connect();
+    extern char IP[15];
 }
 
 #endif

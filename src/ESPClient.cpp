@@ -1,5 +1,7 @@
 #include "ESPClient.h"
 
+char ESPClient::IP[15];
+
 void ESPClient::launchSoftAP(char *ssid)
 {
     IPAddress local_IP(192, 168, 1, 1);
@@ -25,17 +27,15 @@ wl_status_t ESPClient::connect()
     int timeout = 0;
     while (WiFi.status() != WL_CONNECTED)
     {
-        Serial.print(".");
         timeout++;
-
         delay(500);
         if (timeout > 100)
         {
-            Serial.println("Connection timeout.");
-            Serial.println(WiFi.status());
             return WiFi.status();
         }
     }
+
+    WiFi.localIP().toString().toCharArray(IP,  14);
 
     // If sucessfully connected, disable softAP mode
     WiFi.softAPdisconnect(true);
