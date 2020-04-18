@@ -1,4 +1,5 @@
 #include "src/Config.h"
+#include "src/Display.h"
 #include "src/ESPClient.h"
 #include "src/ESPServer.h"
 #include "src/I2CMaster.h"
@@ -18,13 +19,14 @@
 unsigned long last_data_harvest = 0L;
 wl_status_t connection_status;
 
+Display display = Display::getInstance();
+
 void setup()
 {
     Serial.begin(9600); // for debugging porpuses
-    delay(7500);
-    Serial.println("Serial test");
-
-    Config::load();
+    Config::load(); // load wifi config data
+    i2c::begin();   // join i2c bus
+    display.begin();
 
     // Check if ESP has WiFi configured
     if (!Config::ssid)
@@ -34,16 +36,22 @@ void setup()
     }
     else
     {
-        Serial.println("Connecting to target WiFi...");
-        connection_status = ESPClient::connect(); 
+        display.printMsg("Connecting to target WiFi...");
+        connection_status = ESPClient::connect(); // connect to the target WiFi
         if (connection_status == WL_CONNECTED)
         {
-            Serial.println("Connection sucessfull");
+            display.setSSID(Config::ssid);
+            display.setIP(ESPClient::IP);
+            display.setWiFiStatus(WiFi.status());
+            display.printMsg("Connected");
+
+            downloadConfig();
         }
         else
         {
-            Serial.print("Connection failed, error code: ");
-            Serial.println(connection_status);
+            display.printMsg("Failed");
+            display.setSSID("N/A");
+            display.setIP("000.000.0.0");
         }
     }
     ESPServer::launch();
@@ -52,20 +60,26 @@ void setup()
 void loop()
 {
     ESPServer::server.handleClient();
-    // requestDataFromArduino();
+    requestDataFromArduino();
 }
 
-// void requestDataFromArduino()
-// {
-//     if (millis() - last_data_harvest > DATA_HARVEST_OFFSET)
-//     {
-//         last_data_harvest = millis();
-//         Serial.println("Requesting data from the slave...");
-
-//         memset(i2c::buffer, 0, 512);
-//         i2c::requestData();
-
-//         Serial.println("Done.");
-//         Serial.println(i2c::buffer);
-//     }
-// }
+void requestDataFromArduino()
+{
+    if (millis() - last_data_harvest > DATA_HARVEST_OFFSET)
+    {
+        display.printMsg("Getting sensors data...");
+        last_data_harvest = millis();
+        memset(i2c::buffer, 0, 512);  // clear I2C buffer
+        i2c::requestData();  // request data
+        Serial.println(i2c::buffer);
+        display.printMsg("Data received");
+    }
+    else
+    {
+        char msg[30];
+        char sec[3];
+        ltoa(60 - (millis() - last_data_harvest)/1000L, sec, 10);
+        sprintf(msg, "Next request in %s s", sec);
+        display.printMsg(msg);
+    }    
+}
