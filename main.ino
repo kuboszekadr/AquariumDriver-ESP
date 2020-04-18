@@ -24,9 +24,6 @@ Display display = Display::getInstance();
 void setup()
 {
     Serial.begin(9600); // for debugging porpuses
-    // delay(5000);
-    Serial.println("Serial test");
-
     Config::load(); // load wifi config data
     i2c::begin();   // join i2c bus
     display.begin();
@@ -47,6 +44,8 @@ void setup()
             display.setIP(ESPClient::IP);
             display.setWiFiStatus(WiFi.status());
             display.printMsg("Connected");
+
+            downloadConfig();
         }
         else
         {
@@ -62,7 +61,6 @@ void loop()
 {
     ESPServer::server.handleClient();
     requestDataFromArduino();
-    delay(500);
 }
 
 void requestDataFromArduino()
@@ -73,6 +71,7 @@ void requestDataFromArduino()
         last_data_harvest = millis();
         memset(i2c::buffer, 0, 512);  // clear I2C buffer
         i2c::requestData();  // request data
+        Serial.println(i2c::buffer);
         display.printMsg("Data received");
     }
     else
@@ -82,6 +81,5 @@ void requestDataFromArduino()
         ltoa(60 - (millis() - last_data_harvest)/1000L, sec, 10);
         sprintf(msg, "Next request in %s s", sec);
         display.printMsg(msg);
-    }
-    
+    }    
 }

@@ -33,7 +33,7 @@ public:
     void show();
 
 private:
-    Display();
+    Display() {};
 
     char _ssid[33];
     char _ip[15];

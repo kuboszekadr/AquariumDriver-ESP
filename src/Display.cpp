@@ -6,11 +6,6 @@ Display &Display::getInstance()
     return instance;
 }
 
-Display::Display()
-{
-    // _display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-}
-
 void Display::begin()
 {
     _display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
