@@ -14,18 +14,21 @@
 #include <FS.h>
 #include <Wire.h>
 
-#define DATA_HARVEST_OFFSET 60000L // get data from Arduino once a minute
+#define DATA_HARVEST_OFFSET 10000L // get data from Arduino once a minute
 
 unsigned long last_data_harvest = 0L;
 wl_status_t connection_status;
 
 Display display = Display::getInstance();
+char config_data[256];
 
 void setup()
 {
-    Serial.begin(9600); // for debugging porpuses
-    Config::load(); // load wifi config data
-    i2c::begin();   // join i2c bus
+    delay(3000);
+
+    Serial.begin(9600); // for debugging purposes
+    Config::load();     // load wifi config data
+    i2c::begin();       // join i2c bus
     display.begin();
 
     // Check if ESP has WiFi configured
@@ -45,7 +48,7 @@ void setup()
             display.setWiFiStatus(WiFi.status());
             display.printMsg("Connected");
 
-            downloadConfig();
+            ESPClient::downloadConfig(config_data);
         }
         else
         {
@@ -55,6 +58,14 @@ void setup()
         }
     }
     ESPServer::launch();
+
+    // if (strlen(config_data) > 0)
+    // {
+    // Serial.println("Sending order to the salve...");
+    // Serial.println(config_data);
+    // i2c::sendOrder(config_data, i2c::Order::UPDATE_RTC);
+    // }    
+    // i2c::clearBuffer();
 }
 
 void loop()
@@ -69,17 +80,29 @@ void requestDataFromArduino()
     {
         display.printMsg("Getting sensors data...");
         last_data_harvest = millis();
-        memset(i2c::buffer, 0, 512);  // clear I2C buffer
-        i2c::requestData();  // request data
-        Serial.println(i2c::buffer);
-        display.printMsg("Data received");
+
+        i2c::requestData(); // request data
+        // Serial.println(i2c::buffer);
+
+        // display.printMsg("Sending data out...");
+        // char buf[600];
+        // sprintf(buf, "data=[%s]", i2c::buffer); // convert data from arduino into JSON array (add [,])
+        // if (ESPClient::sendData(buf))
+        // {
+        //     display.printMsg("OK");
+        // }
+        // else
+        // {
+        //     display.printMsg("Error...");
+        // }
+        // i2c::clearBuffer();
     }
     else
     {
         char msg[30];
         char sec[3];
-        ltoa(60 - (millis() - last_data_harvest)/1000L, sec, 10);
+        ltoa((DATA_HARVEST_OFFSET - (millis() - last_data_harvest)) / 1000L, sec, 10);
         sprintf(msg, "Next request in %s s", sec);
         display.printMsg(msg);
-    }    
+    }
 }
