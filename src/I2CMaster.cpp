@@ -6,17 +6,15 @@ i2c::TransmissionStep i2c::transmission_step;
 void i2c::begin()
 {
     Wire.begin(0, 2);
+    Wire.setClockStretchLimit(15000);
 }
 
 void i2c::requestData()
 {
-    int post_length = requestDataLength(); // get amount of the data to be send by the slave
-    Serial.println(post_length);
-
-    // process only if there is something to be read
-    if (post_length > 0)
+    int bytes = requestDataLength(); // get amount of the data to be send by the slave
+    if (bytes > 0)
     {
-        // requestData(post_length);
+        requestData(bytes);
     }
 }
 
@@ -30,31 +28,37 @@ void i2c::requestData(int amount)
 
     while (bytes_left > 0 & received_bytes < I2C_BUFFER_SIZE)
     {
+        delay(10);
         requestDataPackage(received_bytes, package_size); // get package from the slave
 
         received_bytes += package_size;       // calculate start for new data
         bytes_left = amount - received_bytes; // shrink the buffer
 
         package_size = I2C_SLAVE_BUFFER_SIZE < bytes_left ? I2C_SLAVE_BUFFER_SIZE : bytes_left; // calculate next package size
-        delay(10);
+
+        // To change to logger
+        Serial.print("Bytes left:");
+        Serial.println(bytes_left);
     }
 }
 
 int i2c::requestDataLength()
 {
-    Wire.requestFrom(I2C_SLAVE_ADDRESS, 3);  // request up to 999 chars from the slave
+    Wire.requestFrom(I2C_SLAVE_ADDRESS, 4); // request up to 999 chars from the slave
 
-    char len[4];  // placeholder for incoming data amount
-    int i = 0;  // currently read char
-    char c;  // read incoming byte
+    union {
+        uint16_t length; // amount of data in Arduino buffer
+        uint8_t len[4];  // placeholder for incoming data amount
+    };
+    int i = 0; // currently read char
 
     while (Wire.available())
     {
         delay(1);
-        c = Wire.read();
-        len[i++] = c;
+        len[i] = Wire.read();
+        i++;
     }
-    return atoi(len);  // convert char to int and return
+    return length; // convert char to int and return
 }
 
 void i2c::requestDataPackage(int received_bytes, int package_size)

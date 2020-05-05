@@ -11,7 +11,7 @@
 #define I2C_ORDER_OFFSET 5000L
 #define I2C_REQUEST_OFFSET 10000L
 
-#define I2C_BUFFER_SIZE 512
+#define I2C_BUFFER_SIZE 1512
 
 namespace i2c
 {

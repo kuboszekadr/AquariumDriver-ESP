@@ -82,7 +82,7 @@ void requestDataFromArduino()
         last_data_harvest = millis();
 
         i2c::requestData(); // request data
-        // Serial.println(i2c::buffer);
+        Serial.println(i2c::buffer);
 
         // display.printMsg("Sending data out...");
         // char buf[600];
