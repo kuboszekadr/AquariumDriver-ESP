@@ -36,7 +36,6 @@ void i2c::requestData(int amount)
 
         package_size = I2C_SLAVE_BUFFER_SIZE < bytes_left ? I2C_SLAVE_BUFFER_SIZE : bytes_left; // calculate next package size
 
-        // To change to logger
         Serial.print("Bytes left:");
         Serial.println(bytes_left);
     }
@@ -58,7 +57,7 @@ int i2c::requestDataLength()
         len[i] = Wire.read();
         i++;
     }
-    return length; // convert char to int and return
+    return length;  // convert char to int and return
 }
 
 void i2c::requestDataPackage(int received_bytes, int package_size)
