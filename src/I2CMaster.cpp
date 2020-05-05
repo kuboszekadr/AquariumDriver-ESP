@@ -35,6 +35,7 @@ void i2c::requestData(int amount)
         bytes_left = amount - received_bytes; // shrink the buffer
 
         package_size = I2C_SLAVE_BUFFER_SIZE < bytes_left ? I2C_SLAVE_BUFFER_SIZE : bytes_left; // calculate next package size
+
         Serial.print("Bytes left:");
         Serial.println(bytes_left);
     }
@@ -42,14 +43,13 @@ void i2c::requestData(int amount)
 
 int i2c::requestDataLength()
 {
-    Wire.requestFrom(I2C_SLAVE_ADDRESS, 4);  // request up to 999 chars from the slave
-    
-    union
-    {
-        uint16_t length;  // amount of data in Arduino buffer
+    Wire.requestFrom(I2C_SLAVE_ADDRESS, 4); // request up to 999 chars from the slave
+
+    union {
+        uint16_t length; // amount of data in Arduino buffer
         uint8_t len[4];  // placeholder for incoming data amount
     };
-    int i = 0;  // currently read char
+    int i = 0; // currently read char
 
     while (Wire.available())
     {

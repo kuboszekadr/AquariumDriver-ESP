@@ -12,13 +12,46 @@ void ESPClient::launchSoftAP(char *ssid)
     WiFi.softAP(ssid);
 }
 
+bool ESPClient::downloadConfig(char *target)
+{
+    HTTPClient client;
+
+// TODO: change to variable
+    client.begin("http://192.168.0.179/get_date");
+    int response_code = client.GET();       // download config from the server
+
+    if (response_code != 200)
+    {
+        return false;
+    }
+    
+    client.getString().toCharArray(target, 255);
+    client.end();                           // close the connection
+
+    return true;
+}
+
+bool ESPClient::sendData(const char *data)
+{
+    HTTPClient client;
+
+    // TODO: change to variable
+    client.begin("http://192.168.0.179/data_collector");
+    client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    int response_code = client.POST(data);
+
+    client.end();
+    return true;
+}
+
 wl_status_t ESPClient::connect()
 {
     // return false if SSID is empty
     if (!Config::ssid)
     {
         Serial.println("SSID empty or not initalize in config");
-        return WL_NO_SHIELD;  // Error
+        return WL_NO_SHIELD; // Error
     }
 
     // Connect to the target WiFi network
@@ -35,7 +68,7 @@ wl_status_t ESPClient::connect()
         }
     }
 
-    WiFi.localIP().toString().toCharArray(IP,  14);
+    WiFi.localIP().toString().toCharArray(IP, 14);
 
     // If sucessfully connected, disable softAP mode
     WiFi.softAPdisconnect(true);
