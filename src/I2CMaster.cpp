@@ -6,46 +6,63 @@ i2c::TransmissionStep i2c::transmission_step;
 void i2c::begin()
 {
     Wire.begin(0, 2);
-    Wire.setClockStretchLimit(15000);
+    Wire.setClockStretchLimit(150000);
 }
 
-void i2c::requestData()
+uint16_t i2c::requestData()
 {
-    int bytes = requestDataLength(); // get amount of the data to be send by the slave
+    uint16_t bytes = requestDataLength(); // get amount of the data to be send by the slave
     if (bytes > 0)
     {
-        requestData(bytes);
+        return requestData(bytes);
     }
+
+    return 0;
 }
 
-void i2c::requestData(int amount)
+uint16_t i2c::requestData(int amount)
 {
     clearBuffer();
 
-    int package_size = I2C_SLAVE_BUFFER_SIZE < amount ? I2C_SLAVE_BUFFER_SIZE : amount; // get next package size
-    int received_bytes = 0;                                                             // amount of bytes already received from the slave
-    int bytes_left = amount;                                                            // amount of bytes to be requested
+    int package_size = I2C_SLAVE_PACKAGE_SIZE < amount ? I2C_SLAVE_PACKAGE_SIZE : amount; // get next package size
+    int received_bytes = 0;                                                               // amount of bytes already received from the slave
+    int bytes_left = amount;                                                              // amount of bytes to be requested
+
+    int timeout_counter = 0;
 
     while (bytes_left > 0 & received_bytes < I2C_BUFFER_SIZE)
     {
         delay(10);
-        requestDataPackage(received_bytes, package_size); // get package from the slave
+        if (requestDataPackage(received_bytes, package_size) == 0 & timeout_counter < 200)
+        {
+            timeout_counter ++;
+            if (timeout_counter == 200)
+            {
+                break;
+            }
+            
+            continue;
+        } // get package from the slave
 
         received_bytes += package_size;       // calculate start for new data
         bytes_left = amount - received_bytes; // shrink the buffer
 
-        package_size = I2C_SLAVE_BUFFER_SIZE < bytes_left ? I2C_SLAVE_BUFFER_SIZE : bytes_left; // calculate next package size
-
-        Serial.print("Bytes left:");
-        Serial.println(bytes_left);
+        package_size = I2C_SLAVE_PACKAGE_SIZE < bytes_left ? I2C_SLAVE_PACKAGE_SIZE : bytes_left; // calculate next package size
     }
+
+    return amount;
 }
 
-int i2c::requestDataLength()
+uint16_t i2c::requestDataLength()
 {
-    Wire.requestFrom(I2C_SLAVE_ADDRESS, 4); // request up to 999 chars from the slave
+    // request up to 999 chars from the slave
+    if (Wire.requestFrom(I2C_SLAVE_ADDRESS, 4) == 0)
+    {
+        return 0;
+    };
 
-    union {
+    union
+    {
         uint16_t length; // amount of data in Arduino buffer
         uint8_t len[4];  // placeholder for incoming data amount
     };
@@ -53,23 +70,24 @@ int i2c::requestDataLength()
 
     while (Wire.available())
     {
-        delay(1);
         len[i] = Wire.read();
         i++;
     }
-    return length;  // convert char to int and return
+    return length < I2C_SLAVE_BUFFER_SIZE ? length : 0; // convert char to int and return
 }
 
-void i2c::requestDataPackage(int received_bytes, int package_size)
+uint8_t i2c::requestDataPackage(int received_bytes, int package_size)
 {
-    Wire.requestFrom(I2C_SLAVE_ADDRESS, package_size);
+    if (Wire.requestFrom(I2C_SLAVE_ADDRESS, package_size) == 0)
+    {
+        return 0;
+    }
     char c; // incoming byte
-    int i = 0;
+    uint8_t i = 0;
 
     // read package from the slave
     while (Wire.available())
     {
-        delay(1);
         c = Wire.read();
 
         buffer[received_bytes + i] = c; // write to the buffer
@@ -81,6 +99,7 @@ void i2c::requestDataPackage(int received_bytes, int package_size)
             break;
         }
     }
+    return i;
 }
 
 void i2c::sendOrder(char *order_msg, Order order_code)
@@ -99,7 +118,7 @@ void i2c::sendOrder(char *order_msg, Order order_code)
     strcpy(buffer, "0");       // convert order into char
     strcat(buffer, ";");       // add separator
     strcat(buffer, order_msg); // paste order message
-    Serial.println(buffer);
+    // Serial.println(buffer);
 
     uint8_t package_send_status;
     transmission_step = ONGOING;

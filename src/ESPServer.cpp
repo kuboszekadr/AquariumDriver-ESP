@@ -60,6 +60,10 @@ void ESPServer::handleConfig_Post()
             Config::update(Config::Params::PWD, value);
             requires_reconnect = true;
         }
+        else if (strcmp(param, "dbIP") == 0)
+        {
+            Config::update(Config::Params::DB_IP, value);
+        }
         else
         {
             Serial.print(F("Parameter unknown:\t"));

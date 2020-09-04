@@ -10,6 +10,7 @@ void ESPClient::launchSoftAP(char *ssid)
 
     WiFi.softAPConfig(local_IP, gateway, subnet);
     WiFi.softAP(ssid);
+
 }
 
 bool ESPClient::downloadConfig(char *target)
@@ -22,6 +23,7 @@ bool ESPClient::downloadConfig(char *target)
 
     if (response_code != 200)
     {
+        client.end();
         return false;
     }
     
@@ -31,18 +33,33 @@ bool ESPClient::downloadConfig(char *target)
     return true;
 }
 
-bool ESPClient::sendData(const char *data)
+uint8_t ESPClient::sendData(const char *data)
 {
+    // make sure that empty string will not be sent
+    if (strlen(data) == 0)
+    {
+        return ESP_CLIENT_POST_STATUS_NO_DATA;
+    }
+    
     HTTPClient client;
 
     // TODO: change to variable
     client.begin("http://192.168.0.179/data_collector");
     client.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    client.addHeader("Accept", "*/*");
+    client.addHeader("Accept-Encoding", "gzip, deflate, br");
 
-    int response_code = client.POST(data);
+    // add missing data to the request form
+    char *request = new char [strlen(data) + 50];
+    sprintf_P(request, "data={\"device_id\":%d,\"data\":%s}", ESP_CLIENT_DEVICE_ID, data);
 
+    // send request
+    int response_code = client.POST(request);
+    delete request;
+
+    // close connection and return status
     client.end();
-    return true;
+    return response_code == 200 ? ESP_CLIENT_POST_STATUS_SUCCESS : ESP_CLIENT_POST_STATUS_FAILURE;
 }
 
 wl_status_t ESPClient::connect()
