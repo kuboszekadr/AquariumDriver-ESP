@@ -25,43 +25,34 @@ char config_data[256];
 void setup()
 {
     Serial.begin(9600); // for debugging purposes
+    delay(5000);
     Config::load();     // load wifi config data
 
     // short delay to allow Arduino to load config
     // and join I2C bus
-    delay(1000);  
+    delay(1000);
 
-    i2c::begin();    // join i2c bus
-    display.begin(); // start OLED display
+    i2c::begin();        // join i2c bus
+    display.begin();     // start OLED display
+    ESPServer::launch(); // start ESP server
 
-    ESPServer::launch();
-
-    // Check if ESP has WiFi configured
-    if (strlen(Config::ssid) == 0)
-    {
-        display.printMsg("Config mode");
-        ESPClient::launchSoftAP("ESP-Config-WiFi");
-        configMode();
-    }
-
+    Serial.println("Connecting to target WiFi...");
     display.printMsg("Connecting to target WiFi...");
+
     connection_status = ESPClient::connect(); // connect to the target WiFi
-
-    if (connection_status == WL_CONNECTED)
+    if (connection_status != WL_CONNECTED)
     {
-        display.setSSID(Config::ssid);
-        display.setIP(ESPClient::IP);
-        display.setWiFiStatus(WiFi.status());
-        display.printMsg("Connected");
+        Serial.println("Connection failed");
+        ESPClient::launchSoftAP("ESP-CONFIG-WiFi");
+        display.printMsg("Config mode");
+        display.setSSID("ESP-CONFIG-WiFi");
+        display.setIP("192.168.1.1");
 
-        ESPClient::downloadConfig(config_data);
     }
-    else
-    {
-        display.printMsg("Failed");
-        display.setSSID("N/A");
-        display.setIP("000.000.0.0");
-    }
+
+    Serial.println("Connected");
+    char config[512] = {};
+    ESPClient::downloadConfig(config);
 
     if (strlen(config_data) > 0)
     {
@@ -69,7 +60,9 @@ void setup()
         Serial.println(config_data);
         i2c::sendOrder(config_data, i2c::Order::UPDATE_RTC);
     }
-    i2c::clearBuffer();
+    i2c::clearBuffer();    
+    
+    Serial.println("-------------");
 }
 
 void loop()
@@ -84,7 +77,7 @@ void requestDataFromArduino()
     if (millis() - last_data_harvest > DATA_HARVEST_OFFSET)
     {
         // walk-around for hanging I2C bus - restart
-        i2c::begin();  
+        i2c::begin();
 
         display.printMsg("Getting sensors data...");
         last_data_harvest = millis();
@@ -95,7 +88,6 @@ void requestDataFromArduino()
             sendData();
             i2c::clearBuffer();
         }
-
     }
     else
     {
@@ -108,15 +100,6 @@ void requestDataFromArduino()
     }
 }
 
-void configMode()
-{
-    while(strlen(Config::ssid) == 0)
-    {
-        ESPServer::server.handleClient();
-    }
-    Serial.println("Exiting from config mode");
-}
-
 void sendData()
 {
     display.printMsg("Sending data out...");
@@ -124,6 +107,5 @@ void sendData()
     {
         display.printMsg("Error...");
     }
-
     display.printMsg("OK");
 }
