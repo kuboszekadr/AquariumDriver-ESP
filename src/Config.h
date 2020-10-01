@@ -8,40 +8,44 @@
 #define CONFIG_SSID_LENGTH 33
 #define CONFIG_PWD_LENGTH 33
 
-#define CONFIG_DB_DEVICE_ID_LENGTH 2
-#define CONFIG_DB_IP_LENGTH 16
-#define CONFIG_USERNAME_LENGTH 20
-#define CONFIG_DB_PWD_LENGTH 20
+#define CONFIG_API_HOST_IP_LENGTH 16
+#define CONFIG_API_HOST_PORT_LENGTH 6
+
+#define CONFIG_API_DEVICE_ID_LENGTH 3
+#define CONFIG_API_DEVICE_NAME_LENGHT 20
 
 namespace Config
 {
-enum Params
-{
-    SSID = 0,
-    PWD,
-    DEVICE_ID,
-    DB_IP,
-    DB_USERNAME,
-    DB_PWD
-};
+    enum Params
+    {
+        SSID = 0,
+        PWD,
+        
+        API_HOST_IP,
+        API_HOST_PORT,
 
-// WiFi config
-extern char ssid[CONFIG_SSID_LENGTH]; // wifi name
-extern char pwd[CONFIG_PWD_LENGTH];   // wifi password
+        API_DEVICE_ID,
+        API_DEVICE_NAME
+    };
 
-// DB config
-extern char device_id[CONFIG_DB_DEVICE_ID_LENGTH]; // device ID visible in database
-extern char db_ip[CONFIG_DB_IP_LENGTH];            // IP of database
-extern char db_username[CONFIG_USERNAME_LENGTH];   // DB username
-extern char db_pwd[CONFIG_DB_PWD_LENGTH];          // DB pasword
+    // WiFi config
+    extern char ssid[CONFIG_SSID_LENGTH]; // wifi name
+    extern char pwd[CONFIG_PWD_LENGTH];   // wifi password
 
-void load();                              // load whole data
-void load(char *target, uint8_t address); // load EEPROM data into variable
+    // API config
+    extern char api_host_ip[CONFIG_API_HOST_IP_LENGTH];
+    extern char api_host_port[CONFIG_API_HOST_PORT_LENGTH];
+    
+    extern char api_device_id[CONFIG_API_DEVICE_ID_LENGTH];
+    extern char api_device_name[CONFIG_API_DEVICE_NAME_LENGHT];
 
-void loadWiFiConfig();
-void loadDBConfig();
+    void load();                              // load whole data
+    void load(char *target, uint8_t address); // load EEPROM data into variable
 
-bool update(Params param, const char *value); // update EEPROM variable
-int getEEPROMAddress(Params param);
+    void loadWiFiConfig();
+    void loadApiConfig();
+
+    bool update(Params param, const char *value); // update EEPROM variable
+    int getEEPROMAddress(Params param);
 } // namespace Config
 #endif
