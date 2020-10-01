@@ -18,7 +18,6 @@ void ESPServer::handleIndex()
 void ESPServer::handleConfig()
 {
     HTTPMethod method = server.method();
-
     if (method == HTTP_POST)
     {
         // process post request
@@ -33,54 +32,72 @@ void ESPServer::handleConfig()
     {
         //TO DO NOT IMPLEMENTED ERROR
     }
-}
+} 
 
 void ESPServer::handleConfig_Post()
-{
-    char param[30];
-    char value[30];
+{ 
+    char arg[5];
+    char param_json[256];
 
-    // Loop through send parameters
-    for (int i = 0; i < server.args(); i++)
+    server.argName(0).toCharArray(arg, 5);
+    server.arg(1).toCharArray(param_json, 256);
+
+    StaticJsonDocument<256> doc;
+    deserializeJson(doc, param_json);
+    
+    if (strcmp(arg, "wifi") == 0)
     {
-        // convert args and values into arrays
-        server.argName(i).toCharArray(param, 30);
-        server.arg(i).toCharArray(value, 30);
+        const char* ssid = doc["ssid"];
+        const char* pwd = doc["pwd"];
 
-        // check parameter and update values
-        // WiFI SSID
-        if (strcmp(param, "ssid") == 0)
-        {
-            Config::update(Config::Params::SSID, value);
-            requires_reconnect = true;
-        }
-        // WiFi PWD
-        else if (strcmp(param, "wifiPwd") == 0)
-        {
-            Config::update(Config::Params::PWD, value);
-            requires_reconnect = true;
-        }
-        else if (strcmp(param, "dbIP") == 0)
-        {
-            Config::update(Config::Params::DB_IP, value);
-        }
-        else
-        {
-            Serial.print(F("Parameter unknown:\t"));
-            Serial.println(param);
-        }
+        Config::update(Config::Params::SSID, ssid);
+        Config::update(Config::Params::PWD, pwd);
 
-        // clear arrays
-        memset(param, 0, 30);
-        memset(value, 0, 30);
     }
+    else if (strcmp(arg, "api") == 0)
+    {
+        const char* app_host_ip = doc["appHostIp"];
+        const char* app_host_port = doc["appHostPort"];
+
+        Config::update(Config::Params::API_HOST_IP, app_host_ip);
+        Config::update(Config::Params::API_HOST_PORT, app_host_port);
+        
+        Serial.println(Config::Params::API_HOST_IP);
+        Serial.println(Config::Params::API_HOST_PORT);
+
+        const char* app_device_name = doc["appDeviceName"];
+        const char* app_device_id = doc["appDeviceId"];
+
+        Config::update(Config::Params::API_DEVICE_ID, app_device_id);
+        Config::update(Config::Params::API_DEVICE_NAME, app_device_name);
+
+        Serial.println(Config::Params::API_DEVICE_ID);
+        Serial.println(Config::Params::API_DEVICE_NAME);
+    }
+    else
+    {
+        server.send(400);
+    }    
     server.send(200);
 }
 
 void ESPServer::handleConfig_Get()
 {
     // prepare response
-    char response[150];
-    sprintf(response, "ssid=%s&dbIp=%s&dbUsername=%s", Config::ssid, Config::db_ip, Config::db_username);
+    char response[400];
+    StaticJsonDocument<256> doc;
+
+    JsonObject wifi = doc.createNestedObject("wifi");
+    wifi["ssid"] = Config::ssid;
+
+    JsonObject api = doc.createNestedObject("api");
+    api["apiHostIP"] = Config::api_host_ip;
+    api["apiHostPort"] = Config::api_host_port;
+
+    api["apiDeviceId"] = Config::api_device_id;
+    api["apiDeviceName"] = Config::api_device_name;
+
+    serializeJson(doc, response);
+    Serial.println(response);
     server.send(200, "text/plain", response); // send data to the server
 }
