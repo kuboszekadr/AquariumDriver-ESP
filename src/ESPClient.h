@@ -16,11 +16,11 @@ namespace ESPClient
 {
     void launchSoftAP(char *ssid);
 
-    bool downloadConfig(char* target);
+    bool downloadConfig(char *target);
     uint8_t sendData(const char *data);
 
     wl_status_t connect();
     extern char IP[15];
-}
+} // namespace ESPClient
 
 #endif
