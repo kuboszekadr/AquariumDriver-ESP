@@ -21,7 +21,7 @@ bool ESPClient::downloadConfig(char *target)
     client.begin(url);
     int response_code = client.GET(); // download config from the server
 
-    if (response_code != 200)
+    if (response_code != HTTP_CODE_OK)
     {
         Serial.print("Error... \t");
         Serial.println(response_code);
