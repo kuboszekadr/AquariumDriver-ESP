@@ -20,17 +20,15 @@ unsigned long last_data_harvest = 0L;
 wl_status_t connection_status;
 
 Display display = Display::getInstance();
-char config_data[256];
 
 void setup()
 {
     Serial.begin(9600); // for debugging purposes
-    delay(5000);
     Config::load();     // load wifi config data
 
     // short delay to allow Arduino to load config
     // and join I2C bus
-    delay(1000);
+    delay(500);
 
     i2c::begin();        // join i2c bus
     display.begin();     // start OLED display
@@ -53,15 +51,16 @@ void setup()
     Serial.println("Connected");
     char config[512] = {};
     ESPClient::downloadConfig(config);
+    Serial.println(config);
 
-    if (strlen(config_data) > 0)
+    if (strlen(config) > 0)
     {
         Serial.println("Sending order to the salve...");
-        Serial.println(config_data);
-        i2c::sendOrder(config_data, i2c::Order::UPDATE_RTC);
+        Serial.println(config);
+        i2c::sendOrder(config, i2c::Order::UPDATE_RTC);
     }
     i2c::clearBuffer();    
-    
+
     Serial.println("-------------");
 }
 
